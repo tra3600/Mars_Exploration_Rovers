@@ -1,0 +1,75 @@
+I.C.1) Requête SQL pour obtenir le numéro de l'exploration en cours
+Pour obtenir le numéro de l'exploration en cours (celle qui a commencé mais n'est pas encore terminée), vous pouvez utiliser la requête suivante :
+
+SQL
+SELECT EX_NUM
+FROM EXPLO
+WHERE EX_DEB IS NOT NULL AND EX_FIN IS NULL;
+I.C.2) Requête SQL pour obtenir la liste des points d'intérêts et leurs coordonnées pour une exploration donnée
+Pour obtenir la liste des points d'intérêts avec leurs coordonnées pour une exploration dont on connaît le numéro (par exemple :exploration_num), vous pouvez utiliser la requête suivante :
+
+SQL
+SELECT PI_NUM, PI_X, PI_Y
+FROM PI
+WHERE EX_NUM = :exploration_num;
+I.C.3) Requête SQL pour obtenir la surface de chaque zone déjà explorée
+Pour obtenir la surface en mètres carrés de chaque zone d'exploration, vous pouvez utiliser la requête suivante. La surface est calculée comme le produit de la différence maximale et minimale des abscisses et ordonnées des points d'intérêt :
+
+SQL
+SELECT EX_NUM,
+       (MAX(PI_X) - MIN(PI_X)) / 1000.0 * (MAX(PI_Y) - MIN(PI_Y)) / 1000.0 AS surface_m2
+FROM PI
+GROUP BY EX_NUM;
+I.C.4) Surface maximale d'une zone d'exploration que peut stocker la base de données
+La surface maximale d'une zone d'exploration est déterminée par les coordonnées maximales possibles pour les points d'intérêt. Chaque coordonnée est un entier positif en millimètres. Supposons que les coordonnées maximales soient les plus grandes valeurs entières possibles que le système peut stocker.
+
+Pour simplifier, si nous considérons que les coordonnées peuvent aller jusqu'à (2^{31}-1) millimètres (limite d'un entier signé de 32 bits), la surface maximale en mètres carrés serait :
+
+Surface maximale
+=
+(
+2
+31
+−
+1
+1000
+)
+2
+ 
+m
+2
+≈
+(
+2147483.647
+)
+2
+ 
+m
+2
+≈
+4.611686018
+×
+10
+12
+ 
+m
+2
+I.C.5) Requête SQL pour obtenir le nombre de fois où chaque instrument doit être utilisé et sa durée d'utilisation théorique pour l'exploration en cours
+Pour obtenir le nombre de fois où chaque instrument doit être utilisé et sa durée d'utilisation théorique pour l'exploration en cours, vous pouvez utiliser la requête suivante :
+
+SQL
+SELECT i.IN_NUM,
+       COUNT(*) AS nombre_utilisations,
+       SUM(it.IT_DUR) AS duree_utilisation_theorique
+FROM EXPLO e
+JOIN ANALY a ON e.EX_NUM = a.EX_NUM
+JOIN INTYP it ON a.TY_NUM = it.TY_NUM
+JOIN INSTR i ON it.IN_NUM = i.IN_NUM
+WHERE e.EX_DEB IS NOT NULL AND e.EX_FIN IS NULL
+GROUP BY i.IN_NUM;
+Explications des requêtes
+Requête I.C.1 : Sélectionne l'exploration en cours en vérifiant que la date de début (EX_DEB) n'est pas nulle et que la date de fin (EX_FIN) est nulle.
+Requête I.C.2 : Sélectionne les points d'intérêts (PI_NUM) et leurs coordonnées (PI_X, PI_Y) pour une exploration spécifique.
+Requête I.C.3 : Calcule la surface de chaque zone d'exploration en trouvant les différences maximales et minimales des abscisses et ordonnées des points d'intérêt, puis en multipliant ces différences pour obtenir la surface en mètres carrés.
+Requête I.C.5 : Calcule le nombre d'utilisations et la durée d'utilisation théorique pour chaque instrument utilisé dans l'exploration en cours en joignant les tables appropriées et en groupant les résultats par IN_NUM.
+Ces requêtes permettent de manipuler efficacement les données stockées dans la base de données relationnelle du robot pour diverses analyses et opérations.
